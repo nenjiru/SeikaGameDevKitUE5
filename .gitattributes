@@ -1,0 +1,6 @@
+* text=auto
+
+# Prebuilt binaries are small, so they are stored in git directly (no LFS).
+*.dll binary
+*.uasset binary
+*.umap binary

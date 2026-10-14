@@ -1,0 +1,3 @@
+# Binaries/ is committed on purpose: students open the kit without a C++ compiler.
+Intermediate/
+Binaries/**/*.pdb

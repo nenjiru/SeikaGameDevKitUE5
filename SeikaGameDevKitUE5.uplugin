@@ -1,0 +1,25 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "0.1.0",
+	"FriendlyName": "Seika Game Dev Kit UE5",
+	"Description": "Genre-agnostic behind-the-scenes components that work with Seika Game Dev Agent, the Claude Code agent setup for a university game development course.",
+	"Category": "Education",
+	"CreatedBy": "nenjiru",
+	"CreatedByURL": "https://github.com/nenjiru",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"EngineVersion": "5.8.0",
+	"CanContainContent": true,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "SeikaGameDevKitEditor",
+			"Type": "Editor",
+			"LoadingPhase": "PostEngineInit"
+		}
+	]
+}
