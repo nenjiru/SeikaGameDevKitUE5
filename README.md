@@ -31,9 +31,20 @@ Engine plugins that are disabled by default and have runtime modules do. If you 
 
 | Component | Module | Purpose | Usage |
 |---|---|---|---|
-| (none yet) | | | |
+| Events | Content `/SeikaGameDevKitUE5/Events/` | Blueprints notify each other of game events without direct references. One data asset per event | [Events](#events) |
 
 When the editor starts, `LogSeikaGameDevKit` writes the loaded kit version to the Output Log.
+
+## Events
+
+Create one event asset per game event ("ball drained", "score changed", ...). Senders and receivers connect simply by referencing the same asset in the Details panel.
+
+- Create: Content Browser → right-click → Miscellaneous > Data Asset, and pick `PDA_GameEvent` (in the kit's `Events` folder). Name it `DA_<Event>` (e.g. `DA_BallDrained`), put it in `Data/Events/`, and describe the event in `Event Description`
+- Reference: add a variable of type `PDA Game Event` (Object Reference) to the Blueprint, turn on Instance Editable, and set it to the event asset (as the default value, or per placed actor in the level)
+- Send: call `Raise` on the variable
+- Receive: in `BeginPlay`, call `Bind Event to On Raised` on the variable and connect a custom event to its `Event` pin. Every bound receiver is called each time the event is raised
+- Bindings of actors that were destroyed (including those from the previous PIE session) are skipped automatically. Bind again in `BeginPlay` every time
+- Events have no value yet
 
 ## License
 
