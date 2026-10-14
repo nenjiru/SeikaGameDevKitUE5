@@ -39,12 +39,22 @@ When the editor starts, `LogSeikaGameDevKit` writes the loaded kit version to th
 
 Create one event asset per game event ("ball drained", "score changed", ...). Senders and receivers connect simply by referencing the same asset in the Details panel.
 
-- Create: Content Browser → right-click → Miscellaneous > Data Asset, and pick `PDA_GameEvent` (in the kit's `Events` folder). Name it `DA_<Event>` (e.g. `DA_BallDrained`), put it in `Data/Events/`, and describe the event in `Event Description`
-- Reference: add a variable of type `PDA Game Event` (Object Reference) to the Blueprint, turn on Instance Editable, and set it to the event asset (as the default value, or per placed actor in the level)
-- Send: call `Raise` on the variable
-- Receive: in `BeginPlay`, call `Bind Event to On Raised` on the variable and connect a custom event to its `Event` pin. Every bound receiver is called each time the event is raised
+| Type | Value | Use for |
+|---|---|---|
+| `PDA_GameEvent` | none | Something happened ("ball drained") |
+| `PDA_GameEvent_Int` | Integer | A count or score ("score changed" → 120) |
+| `PDA_GameEvent_Float` | Float | A ratio or amount ("health changed" → 0.75) |
+| `PDA_GameEvent_String` | String | A name or message ("stage cleared" → "Stage2") |
+
+All types are children of `PDA_GameEventBase`.
+
+- Create: Content Browser → right-click → Miscellaneous > Data Asset, and pick one of the types above (in the kit's `Events` folder). Name it `DA_<Event>` (e.g. `DA_BallDrained`), put it in `Data/Events/`, and describe the event in `Event Description`
+- Reference: add a variable of the same type (Object Reference, e.g. `PDA Game Event Int`) to the Blueprint, turn on Instance Editable, and set it to the event asset (as the default value, or per placed actor in the level)
+- Send: call `Raise` on the variable (with a value: `Raise` takes `Value`)
+- Receive: in `BeginPlay`, call `Bind Event to On Raised` on the variable and connect a custom event to its `Event` pin (drag from the pin and choose Add Custom Event, so the event gets the matching `Value` input). Every bound receiver is called each time the event is raised
 - Bindings of actors that were destroyed (including those from the previous PIE session) are skipped automatically. Bind again in `BeginPlay` every time
-- Events have no value yet
+- Any type: `On Any Raised` (on `PDA_GameEventBase`) is called for every `Raise`, with the value as text (`ValueText`, empty for `PDA_GameEvent`). It is meant for behind-the-scenes components such as a play log, not for game logic
+- Other value types (a struct, an actor, ...): make a new child Blueprint of `PDA_GameEventBase` with an `On Raised` dispatcher that has the value as input, and a `Raise` function that calls `Notify Raised` (with the value as text) and then `On Raised`
 
 ## License
 
