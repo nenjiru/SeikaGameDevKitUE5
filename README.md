@@ -33,6 +33,7 @@ Engine plugins that are disabled by default and have runtime modules do. If you 
 |---|---|---|---|
 | Events | Content `/SeikaGameDevKitUE5/Events/` | Blueprints notify each other of game events without direct references. One data asset per event. Listener components receive them without bind nodes | [Events](#events) |
 | Play log | `SeikaGameDevKitEditor` | Automatically records what happened every time you play in the editor (PIE) | [Play log](#play-log) |
+| Convention check | Python `seika_game_dev_kit.conventions` | Lists files that break the rules in `PROJECT_CONVENTIONS.md` (placement, names, prefixes and asset types, where each kind goes, redirectors) | [Convention check](#convention-check) |
 
 When the editor starts, `LogSeikaGameDevKit` writes the loaded kit version to the Output Log.
 
@@ -104,6 +105,21 @@ Nothing to set up. Once the kit is installed, every PIE session is recorded.
 - To disable it, turn off Project Settings > Plugins > Seika Game Dev Kit > プレイを記録する (stored in `Config/DefaultEditor.ini`)
 - Packaged games are not recorded
 - When the editor is in the background, UE may slow it down, so `frame` grows slowly
+
+## Convention check
+
+Menu Seika Game Dev Kit > 決まりを点検 checks whether `Content/` follows `PROJECT_CONVENTIONS.md` at the project root (no files are changed). It needs the Python Editor Script Plugin (`PythonScriptPlugin`).
+
+- What is checked (only inside `Content/_Project/`, except placement)
+  - Placement: folders that are not in the folder tree, and files placed directly in a folder whose subfolders are defined. The tree is read from the diagram (`├─` `│` `└─`) in `PROJECT_CONVENTIONS.md`. Anything under a folder whose contents are not defined is allowed. The folders UE creates (`Developers`, `Collections`, `__ExternalActors__`, `__ExternalObjects__`) are allowed
+  - Names: names may only use ASCII letters, digits, `_` and `-`
+  - Prefixes: names without a prefix from the prefix table, and prefixes that do not match the asset type (e.g. `SM_` on something that is not a static mesh; `BP_` / `BPC_` / `PDA_` are told apart by the parent class). Prefixes in the table that the kit does not know are only checked for presence
+  - Where each kind goes: Blueprints inside `Art/`; `L_` outside `Maps/`; `WBP_` outside `Blueprints/UI/`; `ABP_` outside `Blueprints/`; `IA_` / `IMC_` outside `Input/`; `DA_` / `PDA_` / `DT_` / `CF_` / `PM_` outside `Data/`; `LI_` outside `Art/Backgrounds/` and `Maps/`
+  - Redirectors left after moving assets
+- `Sandbox/` is checked for names and prefixes only. `_ThirdParty/` and plugins are not checked
+- Results: a summary dialog, one warning per issue in the Output Log, and the assets are selected in the Content Browser. The result is also written to `Saved/Conventions/latest.json`
+- For the agent: Unreal MCP toolset `seika_game_dev_kit.toolset.SeikaKitTools`, tool `check_conventions` (returns the same JSON). It is registered only when the `ToolsetRegistry` plugin (part of Unreal MCP) is enabled
+- The rules for each prefix's asset type and folder are in the kit (`Content/Python/seika_game_dev_kit/conventions.py`, `TYPE_RULES` and `PLACE_RULES`). Update them together with `PROJECT_CONVENTIONS.md`
 
 ## License
 
