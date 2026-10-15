@@ -97,10 +97,12 @@ Nothing to set up. Once the kit is installed, every PIE session is recorded.
 | `event` | A kit event is raised | `name` (the event asset), `value` (as text; omitted for events without a value) |
 | `log` | A warning or error (any category), or a Print String | `level` (`log`, `warning`, `error`), `category`, `message` |
 | `summary` | The same entry occurred more than 10 times in one second | `of` (what), `second`, `total`, `omitted`, `last` (last value) |
+| `tuning_change` | PIE stops, for each value of a data asset in `/Game/_Project/` that changed during PIE (written before `session_end`) | `asset`, `path`, `property`, `before`, `after` (values as text; arrays and structs as one text) |
 | `session_end` | PIE stops | `duration`, `events` (number of raised events) |
 
 - When the same entry (same event, or same log message) occurs more than 10 times in one second, the rest of that second is folded into one `summary` line. It is written with the next line, or when PIE stops
-- Other logs (engine information) and `LogModelContextProtocol` (Unreal MCP) are not recorded
+- Other logs (engine information) and Unreal MCP's logs (`LogModelContextProtocol`, `LogHttpConnection`) are not recorded
+- Tuning changes: values of data assets changed in the Details panel during PIE stay after PIE (the asset is marked as unsaved; it is not written to disk until saved). The play log records them so they are not lost track of. Only the properties editable on the asset are compared
 - Kit events loaded during PIE are recorded too. Bindings are removed when PIE stops
 - To disable it, turn off Project Settings > Plugins > Seika Game Dev Kit > プレイを記録する (stored in `Config/DefaultEditor.ini`)
 - Packaged games are not recorded

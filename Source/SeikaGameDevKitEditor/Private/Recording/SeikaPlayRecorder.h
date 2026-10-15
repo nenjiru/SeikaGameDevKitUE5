@@ -12,7 +12,8 @@ class UWorld;
  * PIE で遊ぶたびに、何が起きたかを自動で記録する（置くものはない）。
  * 書き出し先：プロジェクトの Saved/PlayLog/<日時>.jsonl（新しいものから KeepFiles 個を残す）。
  * 記録するもの：PIE の開始と終了、レベルの読み込み、キットのイベント、
- * 警告とエラー（どのログの種類でも）、Print String（LogBlueprintUserMessages）。
+ * 警告とエラー（どのログの種類でも）、Print String（LogBlueprintUserMessages）、
+ * PIE の間に変わったデータアセット（_Project/ の中）の値。
  * 止めたいときは、Project Settings > Plugins > Seika Game Dev Kit の「プレイを記録する」をオフにする。
  */
 class FSeikaPlayRecorder : public FOutputDevice, public FGCObject
@@ -48,6 +49,8 @@ private:
 	void Stop();
 	void BindEvent(UObject* GameEvent);
 	void UnbindAllEvents();
+	void TakeTuningSnapshot();
+	void RecordTuningChanges();
 	void DeleteOldFiles() const;
 
 	double Now() const;
@@ -59,6 +62,8 @@ private:
 	TUniquePtr<FSeikaPlayLogWriter> Writer;
 	TArray<TObjectPtr<USeikaPlayLogEventProxy>> Proxies;
 	UClass* EventBaseClass = nullptr;
+	// PIE を始めたときのデータアセットの値（アセット → 項目の名前 → 値の文字）
+	TMap<TWeakObjectPtr<UObject>, TMap<FString, FString>> TuningSnapshot;
 	double StartSeconds = 0.0;
 	uint64 StartFrame = 0;
 	int32 EventCount = 0;

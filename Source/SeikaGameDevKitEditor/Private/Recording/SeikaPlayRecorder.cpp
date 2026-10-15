@@ -4,6 +4,7 @@
 #include "SeikaPlayLogEventProxy.h"
 #include "SeikaPlayLogWriter.h"
 #include "Editor.h"
+#include "Engine/DataAsset.h"
 #include "Engine/World.h"
 #include "HAL/FileManager.h"
 #include "Misc/EngineVersion.h"
@@ -25,11 +26,35 @@ namespace
 	// エディタの道具が出すログ（ゲームとは関係がないので記録しない）
 	const FName IgnoredCategories[] = {
 		FName(TEXT("LogModelContextProtocol")),
+		// Unreal MCP の通信（エディタの HTTP サーバー）。つながりが切れたときにエラーを出す
+		FName(TEXT("LogHttpConnection")),
+		FName(TEXT("LogHttpConnectionResponseWriteContext")),
 	};
 
 	FString LevelName(const UWorld* World)
 	{
 		return World != nullptr ? UWorld::RemovePIEPrefix(World->GetMapName()) : FString();
+	}
+
+	// 値を比べるデータアセットの場所（ゲームのファイル）
+	const TCHAR* TuningPath = TEXT("/Game/_Project/");
+
+	// データアセットの詳細パネルで変えられる項目の値を、項目ごとに文字にする
+	TMap<FString, FString> ExportEditableValues(const UObject* Asset)
+	{
+		TMap<FString, FString> Values;
+		for (TFieldIterator<FProperty> It(Asset->GetClass()); It; ++It)
+		{
+			const FProperty* Property = *It;
+			if (!Property->HasAnyPropertyFlags(CPF_Edit) || Property->HasAnyPropertyFlags(CPF_DisableEditOnInstance | CPF_EditConst | CPF_Transient))
+			{
+				continue;
+			}
+			FString Text;
+			Property->ExportTextItem_Direct(Text, Property->ContainerPtrToValuePtr<void>(Asset), nullptr, const_cast<UObject*>(Asset), PPF_None);
+			Values.Add(Property->GetName(), Text);
+		}
+		return Values;
 	}
 }
 
@@ -65,6 +90,7 @@ void FSeikaPlayRecorder::OnEndPIE(bool bIsSimulating)
 {
 	if (Writer.IsValid())
 	{
+		RecordTuningChanges();
 		Write(TEXT("session_end"), FString(), FString(), {
 			FSeikaPlayLogField::Number(TEXT("duration"), Now()),
 			FSeikaPlayLogField::Int(TEXT("events"), EventCount),
@@ -145,6 +171,53 @@ void FSeikaPlayRecorder::Begin(bool bIsSimulating)
 			BindEvent(GameEvent);
 		}
 	}
+
+	TakeTuningSnapshot();
+}
+
+// PIE を始めたときの、データアセットの値を控える（PIE の中で詳細パネルから変えた値は、止めたあとも残るため）
+void FSeikaPlayRecorder::TakeTuningSnapshot()
+{
+	TuningSnapshot.Reset();
+	TArray<UObject*> Assets;
+	GetObjectsOfClass(UDataAsset::StaticClass(), Assets, true, RF_ClassDefaultObject | RF_ArchetypeObject);
+	for (UObject* Asset : Assets)
+	{
+		if (!Asset->GetPathName().StartsWith(TuningPath))
+		{
+			continue;
+		}
+		TuningSnapshot.Add(Asset, ExportEditableValues(Asset));
+	}
+}
+
+// 控えた値と今の値を比べ、変わった項目を1件1行で書く
+void FSeikaPlayRecorder::RecordTuningChanges()
+{
+	for (const TPair<TWeakObjectPtr<UObject>, TMap<FString, FString>>& Pair : TuningSnapshot)
+	{
+		const UObject* Asset = Pair.Key.Get();
+		if (Asset == nullptr)
+		{
+			continue;
+		}
+		const TMap<FString, FString> Now = ExportEditableValues(Asset);
+		for (const TPair<FString, FString>& Before : Pair.Value)
+		{
+			const FString* After = Now.Find(Before.Key);
+			if (After != nullptr && !After->Equals(Before.Value, ESearchCase::CaseSensitive))
+			{
+				Write(TEXT("tuning_change"), FString(), FString(), {
+					FSeikaPlayLogField::String(TEXT("asset"), Asset->GetName()),
+					FSeikaPlayLogField::String(TEXT("path"), Asset->GetPathName()),
+					FSeikaPlayLogField::String(TEXT("property"), Before.Key),
+					FSeikaPlayLogField::String(TEXT("before"), Before.Value),
+					FSeikaPlayLogField::String(TEXT("after"), *After),
+				});
+			}
+		}
+	}
+	TuningSnapshot.Reset();
 }
 
 void FSeikaPlayRecorder::Stop()
