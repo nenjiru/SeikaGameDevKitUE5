@@ -32,6 +32,7 @@ Engine plugins that are disabled by default and have runtime modules do. If you 
 | Component | Module | Purpose | Usage |
 |---|---|---|---|
 | Events | Content `/SeikaGameDevKitUE5/Events/` | Blueprints notify each other of game events without direct references. One data asset per event. Listener components receive them without bind nodes | [Events](#events) |
+| Play log | `SeikaGameDevKitEditor` | Automatically records what happened every time you play in the editor (PIE) | [Play log](#play-log) |
 
 When the editor starts, `LogSeikaGameDevKit` writes the loaded kit version to the Output Log.
 
@@ -80,6 +81,29 @@ For another value type (a struct, an actor, ...), make it in the game project (n
 
 - Event type: a child Blueprint of `PDA_GameEventBase` with an `On Raised` dispatcher that has the value as input, and a `Raise` function that calls `Notify Raised` (with the value as text) and then `On Raised`
 - Listener component (optional): an Actor Component with the same structure as `BPC_GameEventListener_Int`, with `Game Event` and `On Event` changed to the new type
+
+## Play log
+
+Nothing to set up. Once the kit is installed, every PIE session is recorded.
+
+- Location: `Saved/PlayLog/<date-time>.jsonl` in the project (the newest 20 files are kept; `Saved/` is ignored by git)
+- One JSON object per line. Every line has `kind`, `t` (seconds since PIE started) and `frame` (frames since PIE started)
+
+| kind | When | Fields |
+|---|---|---|
+| `session_start` | PIE starts (before `BeginPlay`) | `date`, `unreal` (engine version), `level`, `mode` (`simulate` only when simulating) |
+| `level_loaded` | A level is opened during PIE (Open Level, ...) | `level` |
+| `event` | A kit event is raised | `name` (the event asset), `value` (as text; omitted for events without a value) |
+| `log` | A warning or error (any category), or a Print String | `level` (`log`, `warning`, `error`), `category`, `message` |
+| `summary` | The same entry occurred more than 10 times in one second | `of` (what), `second`, `total`, `omitted`, `last` (last value) |
+| `session_end` | PIE stops | `duration`, `events` (number of raised events) |
+
+- When the same entry (same event, or same log message) occurs more than 10 times in one second, the rest of that second is folded into one `summary` line. It is written with the next line, or when PIE stops
+- Other logs (engine information) and `LogModelContextProtocol` (Unreal MCP) are not recorded
+- Kit events loaded during PIE are recorded too. Bindings are removed when PIE stops
+- To disable it, turn off Project Settings > Plugins > Seika Game Dev Kit > プレイを記録する (stored in `Config/DefaultEditor.ini`)
+- Packaged games are not recorded
+- When the editor is in the background, UE may slow it down, so `frame` grows slowly
 
 ## License
 

@@ -19,6 +19,10 @@ public class SeikaGameDevKitEditor : ModuleRules
 			"Engine",
 			"UnrealEd",
 			"Projects",
+			"DeveloperSettings",
 		});
+
+		// Recording/ などのサブフォルダのヘッダーを、フォルダ名なしでも含められるようにする
+		PrivateIncludePaths.Add(System.IO.Path.Combine(ModuleDirectory, "Private"));
 	}
 }
