@@ -9,8 +9,22 @@ This is the Unreal Engine counterpart of [SeikaGameDevKit](https://github.com/ne
 
 ## Installation
 
-The kit is a project plugin. Put this repository at `Plugins/SeikaGameDevKitUE5/` in your project.
-Prebuilt binaries for Win64 are included, so no C++ compiler is needed to open the project.
+### With the agent setup (used in the course)
+
+The agent setup (AGENTS.md, skills, guides and project conventions) and this kit are published together as `SeikaGameDevAgentUE5.zip` in this repository's [Releases](https://github.com/nenjiru/SeikaGameDevKitUE5/releases). Run the following line in PowerShell at the root of a UE 5.8 project (the folder that contains the `.uproject`). Add ` -WithDiscord` at the end to include the Discord reporter.
+
+```powershell
+irm https://github.com/nenjiru/SeikaGameDevKitUE5/releases/latest/download/install.ps1 -OutFile install.ps1; powershell -NoProfile -ExecutionPolicy Bypass -File install.ps1
+```
+
+- Existing files are never overwritten (an existing `Plugins/SeikaGameDevKitUE5/` is kept as is)
+- The `.uproject` gets Unreal MCP, EditorToolset and the Python Editor Script Plugin (editor only) and this kit. `Config/DefaultEditorPerProjectUserSettings.ini` gets the setting that starts the Unreal MCP server with the editor
+- Commit the kit into your project's repository, including `Binaries/`, so that teammates can open the project without a C++ compiler
+
+### Kit only
+
+The kit is a project plugin. Put it at `Plugins/SeikaGameDevKitUE5/` in your project.
+Prebuilt binaries for Win64 (UE 5.8) are included, so no C++ compiler is needed to open the project.
 
 The kit is read-only for students. Report bugs and missing features to the instructor.
 
