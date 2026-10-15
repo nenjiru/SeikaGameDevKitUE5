@@ -31,7 +31,7 @@ Engine plugins that are disabled by default and have runtime modules do. If you 
 
 | Component | Module | Purpose | Usage |
 |---|---|---|---|
-| Events | Content `/SeikaGameDevKitUE5/Events/` | Blueprints notify each other of game events without direct references. One data asset per event | [Events](#events) |
+| Events | Content `/SeikaGameDevKitUE5/Events/` | Blueprints notify each other of game events without direct references. One data asset per event. Listener components receive them without bind nodes | [Events](#events) |
 
 When the editor starts, `LogSeikaGameDevKit` writes the loaded kit version to the Output Log.
 
@@ -52,9 +52,34 @@ All types are children of `PDA_GameEventBase`.
 - Reference: add a variable of the same type (Object Reference, e.g. `PDA Game Event Int`) to the Blueprint, turn on Instance Editable, and set it to the event asset (as the default value, or per placed actor in the level)
 - Send: call `Raise` on the variable (with a value: `Raise` takes `Value`)
 - Receive: in `BeginPlay`, call `Bind Event to On Raised` on the variable and connect a custom event to its `Event` pin (drag from the pin and choose Add Custom Event, so the event gets the matching `Value` input). Every bound receiver is called each time the event is raised
+- Receive without binding: use a listener component instead (see below)
 - Bindings of actors that were destroyed (including those from the previous PIE session) are skipped automatically. Bind again in `BeginPlay` every time
 - Any type: `On Any Raised` (on `PDA_GameEventBase`) is called for every `Raise`, with the value as text (`ValueText`, empty for `PDA_GameEvent`). It is meant for behind-the-scenes components such as a play log, not for game logic
-- Other value types (a struct, an actor, ...): make a new child Blueprint of `PDA_GameEventBase` with an `On Raised` dispatcher that has the value as input, and a `Raise` function that calls `Notify Raised` (with the value as text) and then `On Raised`
+### Listener components
+
+Receive an event without building the bind nodes. There is one component per event type.
+
+| Component | Event type | `On Event` gives |
+|---|---|---|
+| `BPC_GameEventListener` | `PDA_GameEvent` | nothing |
+| `BPC_GameEventListener_Int` | `PDA_GameEvent_Int` | `Value` (Integer) |
+| `BPC_GameEventListener_Float` | `PDA_GameEvent_Float` | `Value` (Float) |
+| `BPC_GameEventListener_String` | `PDA_GameEvent_String` | `Value` (String) |
+
+1. In the Blueprint's Components panel, Add → the listener component for the event type
+2. Select the component and set `Game Event` in the Details panel (per placed actor is also possible)
+3. In the Details panel's Events section, click + next to `On Event`. The event node appears in the Event Graph; connect what should happen
+   - The Events section appears only in the Blueprint editor (select the component in its Components panel), not in the Details panel of an actor placed in the level
+   - When the event node already exists, the button next to `On Event` jumps to it instead of showing +
+- The component binds in `BeginPlay` and unbinds in `EndPlay`. Add one component per event you want to receive
+- If `Game Event` is empty, it prints a warning with the actor name when play starts
+
+### Other value types
+
+For another value type (a struct, an actor, ...), make it in the game project (not in the kit):
+
+- Event type: a child Blueprint of `PDA_GameEventBase` with an `On Raised` dispatcher that has the value as input, and a `Raise` function that calls `Notify Raised` (with the value as text) and then `On Raised`
+- Listener component (optional): an Actor Component with the same structure as `BPC_GameEventListener_Int`, with `Game Event` and `On Event` changed to the new type
 
 ## License
 
